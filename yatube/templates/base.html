@@ -1,0 +1,21 @@
+<!-- templates/base.html -->
+{% load static %}
+<!DOCTYPE html> 
+<html lang="ru">          
+  <head>
+    {% block title %}{% endblock %}    
+  </head>
+  <body>       
+    <header>
+      {% block header %}{% endblock header %}
+      {% include 'includes/header.html' %}
+    </header>
+    <main>
+      {% block content %}
+      {% endblock %}
+    </main>
+    <footer>
+      {% include 'includes/footer.html' %} 
+    </footer>
+  </body>
+</html>
