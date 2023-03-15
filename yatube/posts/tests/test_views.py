@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.test import Client, TestCase
 from django.urls import reverse
+
 from posts.models import Follow, Group, Post
 
 User = get_user_model()
@@ -192,6 +193,27 @@ class PostPagesTests(TestCase):
             reverse('posts:follow_index')
         )
         self.assertEqual(len(response_unfollow.context['page_obj']), 0)
+
+    def test_follow_unfollow(self):
+        """Подписки и отписки"""
+        self.authorized_client.post(
+            reverse('posts:profile_follow', kwargs={'username': self.user}),
+            follow=True
+        )
+        self.assertTrue(
+            Follow.objects.filter(
+                user=PostPagesTests.user, author=self.user
+            ).exists()
+        )
+        self.authorized_client.post(
+            reverse('posts:profile_unfollow', kwargs={'username': self.user}),
+            follow=True
+        )
+        self.assertFalse(
+            Follow.objects.filter(
+                user=PostPagesTests.user, author=self.user
+            ).exists()
+        )
 
 
 class PaginatorViewsTest(TestCase):
