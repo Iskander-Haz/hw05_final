@@ -1,11 +1,11 @@
+from django.contrib.auth import get_user_model
+from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.http import HttpResponseRedirect
-from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth import get_user_model
+from django.shortcuts import get_object_or_404, redirect, render
 
-from .models import Post, Group, Follow
-from .forms import PostForm, CommentForm
+from .forms import CommentForm, PostForm
+from .models import Follow, Group, Post
 
 User = get_user_model()
 
@@ -39,7 +39,8 @@ def group_posts(request, slug):
 def profile(request, username):
     author = get_object_or_404(User, username=username)
     posts = author.posts.all()
-    following = author.following.exists()
+    following = (request.user.is_authenticated
+                 and Follow.objects.filter(user=request.user, author=author))
     context = {
         'page_obj': paginator(request, posts),
         'author': author,

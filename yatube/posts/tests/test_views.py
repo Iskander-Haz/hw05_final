@@ -1,8 +1,9 @@
-from django.contrib.auth import get_user_model
-from django.test import TestCase, Client
-from django.urls import reverse
 from django import forms
-from posts.models import Group, Post, Follow
+from django.contrib.auth import get_user_model
+from django.core.cache import cache
+from django.test import Client, TestCase
+from django.urls import reverse
+from posts.models import Follow, Group, Post
 
 User = get_user_model()
 
@@ -117,15 +118,15 @@ class PostPagesTests(TestCase):
 
     def test_when_create_post(self):
         """Проверка при создании поста"""
-        user = User.objects.create_user(username='name_2')
+        user = User.objects.create_user(username='name_new')
         group = Group.objects.create(
-            title='Тестовая группа 2',
-            slug='test_slug_2',
-            description='Тестовое описание 2',
+            title='Тестовая группа NEW',
+            slug='test_slug_new',
+            description='Тестовое описание NEW',
         )
         post = Post.objects.create(
             author=user,
-            text='Тестовый пост 2',
+            text='Тестовый пост NEW',
             group=group,
         )
         template_response_list = [
@@ -149,12 +150,25 @@ class PostPagesTests(TestCase):
 
     def test_cache(self):
         """Проверка работы кэша"""
-        response = self.guest_client.get(reverse('posts:index'))
-        post = response.content
-        Post.objects.get(id=1).delete()
-        response_new = self.guest_client.get(reverse('posts:index'))
-        post_new = response_new.content
-        self.assertEqual(post, post_new)
+        response = self.authorized_client.get(
+            reverse('posts:index')
+        )
+        posts = response.content
+        Post.objects.create(
+            text='Тестовый пост NEW',
+            author=PostPagesTests.user,
+        )
+        old_response = self.authorized_client.get(
+            reverse('posts:index')
+        )
+        old_posts = old_response.content
+        self.assertEqual(old_posts, posts)
+        cache.clear()
+        new_response = self.authorized_client.get(
+            reverse('posts:index')
+        )
+        new_posts = new_response.content
+        self.assertNotEqual(old_posts, new_posts)
 
     def test_follow(self):
         """Подписки на авторов работают"""
@@ -165,6 +179,7 @@ class PostPagesTests(TestCase):
         response_follow = self.authorized_client.get(
             reverse('posts:follow_index')
         )
+        self.assertEqual(len(response_follow.context["page_obj"]), 1)
         self.assertIn(PostPagesTests.post, response_follow.context['page_obj'])
         user = User.objects.create(username='sun')
         self.authorized_client.force_login(user)

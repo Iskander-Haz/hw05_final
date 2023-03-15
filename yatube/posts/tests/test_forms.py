@@ -1,14 +1,14 @@
 import shutil
 import tempfile
-
 from http import HTTPStatus
+
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
-from posts.forms import PostForm, CommentForm
-from posts.models import Group, Post, Comment
+from posts.forms import CommentForm, PostForm
+from posts.models import Comment, Group, Post
 
 User = get_user_model()
 
@@ -87,7 +87,7 @@ class PostFormTests(TestCase):
                 author=PostFormTests.user,
                 text=form_data['text'],
                 group=self.group.id,
-                image='posts/small.gif',
+                image=f'posts/{form_data["image"]}',
             ).exists()
         )
         new_post = Post.objects.latest('id')
@@ -137,10 +137,14 @@ class PostFormTests(TestCase):
     def test_add_comment(self):
         """Валидная форма создает комментарий"""
         comment_count = Comment.objects.count()
-        Comment.objects.create(
-            post=PostFormTests.post,
-            author=PostFormTests.user,
-            text='Тестовый комментарий'
+        form_data = {"text": "Тестовый коммент"}
+        self.authorized_client.post(
+            reverse("posts:add_comment", kwargs={"post_id": self.post.id}),
+            data=form_data,
+            follow=True,
         )
         self.assertEqual(Comment.objects.count(), comment_count + 1)
         self.assertEqual(self.comment.author, PostFormTests.user)
+        self.assertTrue(
+            Comment.objects.filter(text=form_data['text']).exists()
+        )
