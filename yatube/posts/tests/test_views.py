@@ -194,8 +194,8 @@ class PostPagesTests(TestCase):
         )
         self.assertEqual(len(response_unfollow.context['page_obj']), 0)
 
-    def test_follow_unfollow(self):
-        """Подписки и отписки"""
+    def test_following(self):
+        """Подписки"""
         self.authorized_client.post(
             reverse('posts:profile_follow', kwargs={'username': self.user}),
             follow=True
@@ -205,6 +205,9 @@ class PostPagesTests(TestCase):
                 user=PostPagesTests.user, author=self.user
             ).exists()
         )
+
+    def test_unfollowing(self):
+        """Отписки"""
         self.authorized_client.post(
             reverse('posts:profile_unfollow', kwargs={'username': self.user}),
             follow=True
